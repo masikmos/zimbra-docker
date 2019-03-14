@@ -15,11 +15,11 @@ One of the advantages of using docker is that the host OS does not matter, the c
 ## Downloading the image
 The first step is to pull this image into your docker environment, for that just run the next:
 ```bash
-docker pull jorgedlcruz/zimbra
+docker pull masik/zimbra-docker
 ```
 
 ## Creating Zimbra Containers
-Now that we have an image called jorgedlcruz/zimbra, we can do a docker run with some special parameters, like this:
+Now that we have an image called masik/zimbra-docker, we can do a docker run with some special parameters, like this:
 ```bash
 docker run -p 25:25 -p 80:80 -p 465:465 -p 587:587 -p 110:110 -p 143:143 -p 993:993 -p 995:995 -p 443:443 -p 8080:8080 -p 8443:8443 -p 7071:7071 -p 9071:9071 -h zimbra-docker.zimbra.io --dns 127.0.0.1 --dns 8.8.8.8 -i -t -e PASSWORD=Zimbra2017 jorgedlcruz/zimbra
 ```
@@ -43,7 +43,7 @@ The content of the Dockerfile and the start.sh is based on the next Script - Zim
 Download from github, you will need git installed on your OS
 
 ```bash
-git clone https://github.com/jorgedlcruz/zimbra-docker.git
+git clone https://github.com/masikmos/zimbra-docker.git
 ```
 ### Using wget
 For those who want to use wget, follow the next instructions to download the Zimbra-docker package. You might need wget and unzip installed on your OS
@@ -53,14 +53,14 @@ unzip master.zip
 ```
 
 ### Build the image using the Dockerfile
-The `Makefile` in the docker/ directory provides you with a convenient way to build your docker image. You will need make on your OS. Just run
+The `build.sh` in the docker/ directory provides you with a convenient way to build your docker image. You will need make on your OS. Just run
 
 ```bash
 cd zimbra-docker/docker
-sudo make
+sudo ./build.sh
 ```
 
-The default image name is zimbra_docker.
+The default image name is zimbra-docker.
 
 ### Deploy the Docker container
 Now, to deploy the container based on the previous image. As well as publish the Zimbra Collaboration ports, the hostname and the proper DNS, as you want to use bind as a local DNS nameserver within the container, also we will send the password that we want to our Zimbra Server like admin password, mailbox, LDAP, etc.: Syntax:
@@ -84,6 +84,11 @@ The script takes a few minutes, dependent on the your Internet Speed, and resour
 
 </details>
 
+
+### Deploy use docker-compose
+
+Just run ./run.sh
+
 ## Known issues
 
 After the Zimbra automated installation, if you close or quit the bash console from the container, the docker container might exit and keep in stopped state, you just need to run the next commands to start your Zimbra Container:
@@ -95,12 +100,3 @@ docker exec -it YOURCONTAINERID bash
 su - zimbra
 zmcontrol restart
 ```
-
-## Distributed under MIT license
-Copyright (c) 2017 Jorge de la Cruz
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
