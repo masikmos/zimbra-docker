@@ -1,5 +1,8 @@
 #!/bin/sh
 ## Preparing all the variables like IP, Hostname, etc, all of them from the container
+
+if [ ! -r "/opt/zimbra/mailboxd/etc/keystore" ]; then
+
 sleep 5
 HOSTNAME=$(hostname -a)
 DOMAIN=$(hostname -d)
@@ -14,7 +17,7 @@ mv /etc/dnsmasq.conf /etc/dnsmasq.conf.old
 cat <<EOF >>/etc/dnsmasq.conf
 server=8.8.8.8
 listen-address=127.0.0.1
-domain=$DOMAIN
+domain=$HOSTNAME.$DOMAIN
 mx-host=$DOMAIN,$HOSTNAME.$DOMAIN,0
 address=/$HOSTNAME.$DOMAIN/$CONTAINERIP
 user=root
@@ -24,11 +27,11 @@ sudo service dnsmasq restart
 ##Creating the Zimbra Collaboration Config File ##
 touch /opt/zimbra-install/installZimbraScript
 cat <<EOF >/opt/zimbra-install/installZimbraScript
-AVDOMAIN="$DOMAIN"
-AVUSER="admin@$DOMAIN"
-CREATEADMIN="admin@$DOMAIN"
+AVDOMAIN="$HOSTNAME.$DOMAIN"
+AVUSER="admin@$HOSTNAME.$DOMAIN"
+CREATEADMIN="admin@$HOSTNAME.$DOMAIN"
 CREATEADMINPASS="$PASSWORD"
-CREATEDOMAIN="$DOMAIN"
+CREATEDOMAIN="$HOSTNAME.$DOMAIN"
 DOCREATEADMIN="yes"
 DOCREATEDOMAIN="yes"
 DOTRAINSA="yes"
@@ -73,23 +76,23 @@ RUNDKIM="yes"
 RUNSA="yes"
 RUNVMHA="no"
 SERVICEWEBAPP="yes"
-SMTPDEST="admin@$DOMAIN"
+SMTPDEST="admin@$HOSTNAME.$DOMAIN"
 SMTPHOST="$HOSTNAME.$DOMAIN"
 SMTPNOTIFY="yes"
-SMTPSOURCE="admin@$DOMAIN"
+SMTPSOURCE="admin@$HOSTNAME.$DOMAIN"
 SNMPNOTIFY="yes"
 SNMPTRAPHOST="$HOSTNAME.$DOMAIN"
 SPELLURL="http://$HOSTNAME.$DOMAIN:7780/aspell.php"
 STARTSERVERS="yes"
 SYSTEMMEMORY="3.8"
-TRAINSAHAM="ham.$RANDOMHAM@$DOMAIN"
-TRAINSASPAM="spam.$RANDOMSPAM@$DOMAIN"
+TRAINSAHAM="ham.$RANDOMHAM@$HOSTNAME.$DOMAIN"
+TRAINSASPAM="spam.$RANDOMSPAM@$HOSTNAME.$DOMAIN"
 UIWEBAPPS="yes"
 UPGRADE="yes"
 USEKBSHORTCUTS="TRUE"
 USESPELL="yes"
 VERSIONUPDATECHECKS="TRUE"
-VIRUSQUARANTINE="virus-quarantine.$RANDOMVIRUS@$DOMAIN"
+VIRUSQUARANTINE="virus-quarantine.$RANDOMVIRUS@$HOSTNAME.$DOMAIN"
 ZIMBRA_REQ_SECURITY="yes"
 ldap_bes_searcher_password="$PASSWORD"
 ldap_dit_base_dn_config="cn=zimbra"
@@ -108,17 +111,17 @@ zimbraDNSMasterIP=""
 zimbraDNSTCPUpstream="no"
 zimbraDNSUseTCP="yes"
 zimbraDNSUseUDP="yes"
-zimbraDefaultDomainName="$DOMAIN"
+zimbraDefaultDomainName="$HOSTNAME.$DOMAIN"
 zimbraFeatureBriefcasesEnabled="Enabled"
 zimbraFeatureTasksEnabled="Enabled"
 zimbraIPMode="ipv4"
 zimbraMailProxy="FALSE"
 zimbraMtaMyNetworks="127.0.0.0/8 $CONTAINERIP/32 [::1]/128 [fe80::]/64"
-zimbraPrefTimeZoneId="America/Los_Angeles"
+zimbraPrefTimeZoneId="Europe/Moscow"
 zimbraReverseProxyLookupTarget="TRUE"
 zimbraVersionCheckInterval="1d"
-zimbraVersionCheckNotificationEmail="admin@$DOMAIN"
-zimbraVersionCheckNotificationEmailFrom="admin@$DOMAIN"
+zimbraVersionCheckNotificationEmail="admin@$HOSTNAME.$DOMAIN"
+zimbraVersionCheckNotificationEmailFrom="admin@$HOSTNAME.$DOMAIN"
 zimbraVersionCheckSendNotifications="TRUE"
 zimbraWebProxy="FALSE"
 zimbra_ldap_userdn="uid=zimbra,cn=admins,cn=zimbra"
@@ -126,12 +129,13 @@ zimbra_require_interprocess_security="1"
 zimbra_server_hostname="$HOSTNAME.$DOMAIN"
 INSTALL_PACKAGES="zimbra-core zimbra-ldap zimbra-logger zimbra-mta zimbra-snmp zimbra-store zimbra-apache zimbra-spell zimbra-memcached zimbra-proxy"
 EOF
+
 ##Install the Zimbra Collaboration ##
-echo "Downloading Zimbra Collaboration 8.8.7"
-wget -O /opt/zimbra-install/zimbra-zcs-8.8.7.tar.gz https://files.zimbra.com/downloads/8.8.7_GA/zcs-8.8.7_GA_1964.UBUNTU16_64.20180223145016.tgz
+echo "Downloading Zimbra Collaboration 8.8.11"
+wget -O /opt/zimbra-install/zimbra-zcs-8.8.11.tar.gz https://files.zimbra.com/downloads/8.8.11_GA/zcs-8.8.11_GA_3737.UBUNTU16_64.20181207111719.tgz
 
 echo "Extracting files from the archive"
-tar xzvf /opt/zimbra-install/zimbra-zcs-8.8.7.tar.gz -C /opt/zimbra-install/
+tar xzvf /opt/zimbra-install/zimbra-zcs-8.8.11.tar.gz -C /opt/zimbra-install/
 
 echo "Update package cache"
 apt update
@@ -142,8 +146,25 @@ cd /opt/zimbra-install/zcs-* && ./install.sh -s < /opt/zimbra-install/installZim
 echo "Installing Zimbra Collaboration injecting the configuration"
 /opt/zimbra/libexec/zmsetup.pl -c /opt/zimbra-install/installZimbraScript
 
+#su - zimbra -c 'zmprov ms $HOSTNAME.$DOMAIN zimbraRemoteManagementPort 2222'
 su - zimbra -c 'zmcontrol restart'
+su - zimbra -c 'zmsshkeygen'
+su - zimbra -c 'zmupdateauthkeys'
+su - zimbra -c 'zmprov mcf zimbraMtaLmtpHostLookup native'
+su - zimbra -c 'zmmtactl restart'
+service ssh start
+#pkill rsyslog
+#/opt/zimbra/libexec/zmsyslogsetup
 echo "You can access now to your Zimbra Collaboration Server"
+
+else
+#groupadd -g 999 zimbra
+#useradd -u 999 -d /opt/zimbra -g 999 zimbra
+service ssh start
+su - zimbra -c 'mysql.server start'
+su - zimbra -c 'zmcontrol start'
+echo "You can access now to your Zimbra Collaboration Server"
+fi
 
 if [[ $1 == "-d" ]]; then
   while true; do sleep 1000; done

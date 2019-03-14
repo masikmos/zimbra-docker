@@ -1,0 +1,43 @@
+version: "3"
+
+volumes:
+    optzm-ZHOSTNAME: {}
+    varzm-ZHOSTNAME: {}
+    etczm-ZHOSTNAME: {}
+    usrzm-ZHOSTNAME: {}
+    libzm-ZHOSTNAME: {}
+services:
+  zm-ZHOSTNAME:
+    image: zimbra-docker
+    hostname: ZHOSTNAME
+    environment:
+      - PASSWORD=ZPASS
+    volumes:
+      - optzm-ZHOSTNAME:/opt
+      - varzm-ZHOSTNAME:/var
+      - etczm-ZHOSTNAME:/etc
+      - usrzm-ZHOSTNAME:/usr
+      - libzm-ZHOSTNAME:/lib
+    dns:
+      - 127.0.0.1
+      - 8.8.8.8
+    ports:
+      - "ZIPADDR:83:80"
+      - "ZIPADDR:25:25"
+      - "ZIPADDR:465:465"
+      - "ZIPADDR:587:587"
+      - "ZIPADDR:110:110"
+      - "ZIPADDR:143:143"
+      - "ZIPADDR:993:993"
+      - "ZIPADDR:995:995"
+      - "ZIPADDR:443:443"
+      - "ZIPADDR:8081:8080"
+      - "ZIPADDR:8443:8443"
+      - "ZIPADDR:7071:7071"
+      - "ZIPADDR:9071:9071"
+#      - "ZIPADDR:2222:22"
+#    healthcheck:
+#      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+#      interval: 5s
+#      timeout: 1s
+#      retries: 5
