@@ -8,7 +8,7 @@ volumes:
     libzm-ZHOSTNAME: {}
 services:
   zm-ZHOSTNAME:
-    image: zimbra-docker
+    image: masik/zimbra-docker
     hostname: ZHOSTNAME
     environment:
       - PASSWORD=ZPASS
